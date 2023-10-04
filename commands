@@ -1,0 +1,11 @@
+python /home2/users/alumnes/1287348/Downloads/lab2/IndexFilesPreprocess.py --index novels_whitespace --path /home2/users/alumnes/1287348/Downloads/novels --token whitespace
+
+python /home2/users/alumnes/1287348/Downloads/lab2/IndexFilesPreprocess.py --index novels_classic --path /home2/users/alumnes/1287348/Downloads/novels --token classic
+
+python /home2/users/alumnes/1287348/Downloads/lab2/IndexFilesPreprocess.py --index novels_standard --path /home2/users/alumnes/1287348/Downloads/novels --token standard
+
+python /home2/users/alumnes/1287348/Downloads/lab2/IndexFilesPreprocess.py --index novels_letter --path /home2/users/alumnes/1287348/Downloads/novels --token letter
+
+python3 /home2/users/alumnes/1287348/dades/Downloads/lab2/CountWords.py --index news_lowercase_aciifolding --alpha > /home2/users/alumnes/1287348/dades/Downloads/lab2/news_lowercase_aciifolding.txt
+
+python3 /home2/users/alumnes/1287348/Downloads/lab2/IndexFilesPreprocess.py --index news_lowercase_aciifolding --path /home2/users/alumnes/1287348/Downloads/news --token letter --filter lowercase asciifolding
