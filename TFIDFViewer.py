@@ -89,7 +89,7 @@ def toTFIDF(client, index, file_id):
 
     tfidfw = []
     for (t, w),(_, df) in zip(file_tv, file_df):
-        #
+        # i add in formula below
         file_tv/max_freq * log(dcount/file_df) #should we specify log base2?
         # do we have to do a loop and add results to tfidfw?
         pass
