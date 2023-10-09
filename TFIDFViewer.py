@@ -116,7 +116,8 @@ def normalize(tw):
     :return:
     """
     #
-    # Program something here
+    norm = np.sqrt(np.square(sum(t))) #is 't' the components and 'tw' the vector
+    tw / norm 
     #
     return None
 
@@ -129,7 +130,8 @@ def cosine_similarity(tw1, tw2):
     :return:
     """
     #
-    # Program something here
+    norm = np.sqrt(np.square(sum(#what do we put))) and we have to use alphabetically sorted to at most one scan of each vector
+    (tw1*tw2) / norm of tw1 * norm of tw2
     #
     return 0
 
