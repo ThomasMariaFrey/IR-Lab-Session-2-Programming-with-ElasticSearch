@@ -1,3 +1,4 @@
+#3 Code completion subtask here: Computing tf-idf's and cosine similarity
 """
 .. module:: TFIDFViewer
 
@@ -18,6 +19,7 @@ TFIDFViewer
 
 from elasticsearch import Elasticsearch
 from elasticsearch.exceptions import NotFoundError
+#I dont really know why Catclient throws an error here.
 from elasticsearch.client import CatClient
 from elasticsearch_dsl import Search
 from elasticsearch_dsl.query import Q
@@ -70,15 +72,17 @@ def document_term_vector(client, index, id):
             file_df[t] = termvector['term_vectors']['text']['terms'][t]['doc_freq']
     return sorted(file_td.items()), sorted(file_df.items())
 
+######################### Changes below #########################
 
 def toTFIDF(client, index, file_id):
     """
     Returns the term weights of a document
 
-    :param file:
-    :return:
+    :param client: The client to communicate with the data source.
+    :param index: The index where the documents are stored.
+    :param file_id: The ID of the file for which we need the TF-IDF.
+    :return: The normalized term weight vector.
     """
-
     # Get the frequency of the term in the document, and the number of documents
     # that contain the term
     file_tv, file_df = document_term_vector(client, index, file_id)
@@ -88,22 +92,26 @@ def toTFIDF(client, index, file_id):
     dcount = doc_count(client, index)
 
     tfidfw = []
-    for (t, w),(_, df) in zip(file_tv, file_df):
-        # i add in formula below
-        file_tv/max_freq * log(dcount/file_df) #should we specify log base2?
-        # do we have to do a loop and add results to tfidfw?
-        pass
+
+    for (term, weight), (_, df) in zip(file_tv, file_df):
+        idf = np.log(dcount / df)
+        tf = weight / max_freq
+        tfidf = tf * idf
+        tfidfw.append((term, tfidf))
 
     return normalize(tfidfw)
 
+
+
 def print_term_weigth_vector(twv):
     """
-    Prints the term vector and the correspondig weights
-    :param twv:
-    :return:
+    Prints the term vector and the corresponding weights
+    :param twv: The list that is given with terms and weights.
+    :return: Nothing
     """
     #
-    # Program something here
+    for term, weight in twv:
+        print(f"{term}, {weight}")
     #
     pass
 
@@ -112,28 +120,75 @@ def normalize(tw):
     """
     Normalizes the weights in t so that they form a unit-length vector
     It is assumed that not all weights are 0
-    :param tw:
-    :return:
+    :param tw: This shall be the list of weight vectors to be normalited
+    :return: The normalized list of weights
     """
-    #
-    norm = np.sqrt(np.square(sum(t))) #is 't' the components and 'tw' the vector
-    tw / norm 
-    #
-    return None
+    #Make an np.array
+    tw = np.array(tw)
+
+    # Extract weights
+    weights = np.array([weight for name, weight in tw], dtype=float)
+    #Calculate the norm with np
+    norm = np.linalg.norm(weights)
+
+    if norm == 0:
+        raise ValueError("Norm is zero, cannot divide!")
+    #Normalize the weights
+    normalized_weights = weights / norm
+    #Recreate the list
+    result = [(name, weight) for (name, _), weight in zip(tw, normalized_weights)]
+
+    return result
 
 
 def cosine_similarity(tw1, tw2):
     """
-    Computes the cosine similarity between two weight vectors, terms are alphabetically ordered
-    :param tw1:
-    :param tw2:
-    :return:
+        Computes the cosine similarity between two weight vectors, terms are alphabetically ordered.
+        This is close to as efficently as possible in python.
+        :param tw1: First weight vector, sorted by term.
+        :param tw2: Second weight vector, sorted by term.
+        :return: Cosine similarity between the two vectors.
     """
-    #
-    norm = np.sqrt(np.square(sum(#what do we put))) and we have to use alphabetically sorted to at most one scan of each vector
-    (tw1*tw2) / norm of tw1 * norm of tw2
-    #
-    return 0
+    #initalize to zero
+    dotproduct, tw1norm, tw2norm, i, j = 0, 0, 0 ,0 ,0
+    #Working through the lengths of both arrays
+    while i < len(tw1) and j < len(tw2):
+        term1, weight1 = tw1[i]
+        term2, weight2 = tw2[j]
+        # If terms match, add to dot product and move both lists one step forward
+        if term1 == term2:
+            dotproduct += weight1 * weight2
+            tw1norm += weight1 ** 2
+            tw2norm += weight2 ** 2
+            j += 1
+            i += 1
+        # If term1 comes before term2 alphabetically, only move list one forward
+        elif term1 < term2:
+            tw1norm += weight1 ** 2
+            i += 1
+        # Otherwise, only move list 2 forward
+        else:
+            tw2norm += weight2 ** 2
+            j += 1
+    # Process any remaining terms in the lists
+    while i < len(tw1):
+        _, weight1 = tw1[i]
+        tw1norm += weight1 ** 2
+        i += 1
+    while j < len(tw2):
+        _, weight2 = tw2[j]
+        tw2norm += weight2 ** 2
+        j += 1
+    #Take the square root here
+    tw1norm = np.sqrt(tw1norm)
+    tw2norm = np.sqrt(tw2norm)
+    # Avoid division by zero.
+    if tw1norm == 0 or tw2norm == 0:
+        return 0
+
+    return dotproduct / (tw1norm * tw2norm)
+
+######################### Changes above #########################
 
 def doc_count(client, index):
     """
@@ -144,6 +199,7 @@ def doc_count(client, index):
     :return:
     """
     return int(CatClient(client).count(index=[index], format='json')[0]['count'])
+
 
 
 if __name__ == '__main__':
