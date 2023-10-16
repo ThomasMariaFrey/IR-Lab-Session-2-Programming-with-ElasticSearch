@@ -76,15 +76,21 @@ def document_term_vector(client, index, id):
 
 def toTFIDF(client, index, file_id):
     """
-    Returns the term weights of a document
+    Returns the term weights of a document.
+
+    Compute the TF-IDF weights for terms in a document. Start by obtaining the term verctor and the
+    Document frequency for a specific document from an index in some database or search client.
+    There after the max frequency is calculated from the term vector. This is used to normalize the
+    Term frequency later on. The total number of documents is calcualted later and safed in dcount.
+    This is used for the IDF computation. There after the TF-IDF weights for each term in the document
+    are calculated and finally normalized.
 
     :param client: The client to communicate with the data source.
     :param index: The index where the documents are stored.
     :param file_id: The ID of the file for which we need the TF-IDF.
     :return: The normalized term weight vector.
     """
-    # Get the frequency of the term in the document, and the number of documents
-    # that contain the term
+
     file_tv, file_df = document_term_vector(client, index, file_id)
 
     max_freq = max([f for _, f in file_tv])
@@ -106,36 +112,33 @@ def toTFIDF(client, index, file_id):
 def print_term_weigth_vector(twv):
     """
     Prints the term vector and the corresponding weights
+
+    This is just a basic print function.
+
     :param twv: The list that is given with terms and weights.
     :return: Nothing
     """
-    #
     for term, weight in twv:
         print(f"{term}, {weight}")
-    #
     pass
 
 
 def normalize(tw):
     """
     Normalizes the weights in t so that they form a unit-length vector
-    It is assumed that not all weights are 0
+    It is assumed that not all weights are 0. First we convert the input list into
+    a numpy array for more efficient calculations. Then the relevant weights are
+    extracted. These are then used for the normalization. This norm shall not be 0.
+    Once the normalized weights have be calculated the list is recreated and returned.
     :param tw: This shall be the list of weight vectors to be normalited
     :return: The normalized list of weights
     """
-    #Make an np.array
     tw = np.array(tw)
-
-    # Extract weights
     weights = np.array([weight for name, weight in tw], dtype=float)
-    #Calculate the norm with np
     norm = np.linalg.norm(weights)
-
     if norm == 0:
         raise ValueError("Norm is zero, cannot divide!")
-    #Normalize the weights
     normalized_weights = weights / norm
-    #Recreate the list
     result = [(name, weight) for (name, _), weight in zip(tw, normalized_weights)]
 
     return result
@@ -145,13 +148,18 @@ def cosine_similarity(tw1, tw2):
     """
         Computes the cosine similarity between two weight vectors, terms are alphabetically ordered.
         This is close to as efficently as possible in python.
+        First we initialize the relevant terms to 0. THrought the function the lists are iteratet throughout. If a term
+        can be found in both lists their weights are used to update the dot product and norms. If a term is only in one
+        of the lists we only update the norm of that one list. There after the remaining terms are processed if
+        necessary. Lastly the norms are squared and finally the cosine similarity is computed as the ratio of the dot
+        product to the product of the magnitudes of the two vectors. If either of the norms is zero and the
+        corresponding vector is a zero vector then the cosine similiarity is defined as 0 to avoid division by zero.
         :param tw1: First weight vector, sorted by term.
         :param tw2: Second weight vector, sorted by term.
         :return: Cosine similarity between the two vectors.
     """
     #initalize to zero
     dotproduct, tw1norm, tw2norm, i, j = 0, 0, 0 ,0 ,0
-    #Working through the lengths of both arrays
     while i < len(tw1) and j < len(tw2):
         term1, weight1 = tw1[i]
         term2, weight2 = tw2[j]
@@ -179,10 +187,8 @@ def cosine_similarity(tw1, tw2):
         _, weight2 = tw2[j]
         tw2norm += weight2 ** 2
         j += 1
-    #Take the square root here
     tw1norm = np.sqrt(tw1norm)
     tw2norm = np.sqrt(tw2norm)
-    # Avoid division by zero.
     if tw1norm == 0 or tw2norm == 0:
         return 0
 
