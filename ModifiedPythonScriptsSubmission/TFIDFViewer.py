@@ -19,7 +19,6 @@ TFIDFViewer
 
 from elasticsearch import Elasticsearch
 from elasticsearch.exceptions import NotFoundError
-#I dont really know why Catclient throws an error here.
 from elasticsearch.client import CatClient
 from elasticsearch_dsl import Search
 from elasticsearch_dsl.query import Q
